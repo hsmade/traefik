@@ -206,6 +206,7 @@ func (s *Server) loadFrontendConfig(
 				frontend.Backend, entryPointName, providerName, frontendName, frontendHash)
 		}
 
+		frontend.Routes = *expandRoutes(&frontend.Routes)
 		serverRoute, err := buildServerRoute(serverEntryPoints[entryPointName], frontendName, frontend, hostResolver)
 		if err != nil {
 			return nil, err
@@ -222,6 +223,22 @@ func (s *Server) loadFrontendConfig(
 	}
 
 	return postConfigs, nil
+}
+
+// split routes into multiple when separated with ||
+func expandRoutes(routes *map[string]types.Route) *map[string]types.Route {
+	result := make(map[string]types.Route)
+	for routeName, route := range *routes {
+		if strings.Contains(route.Rule, "||") {
+			for index, rule := range strings.Split(route.Rule, "||") {
+				result[fmt.Sprintf("%s-%d", routeName, index)] = types.Route{Rule: rule}
+			}
+		} else {
+			// single route, just copy
+			result[routeName] = route
+		}
+	}
+	return &result
 }
 
 func (s *Server) buildForwarder(entryPointName string, entryPoint *configuration.EntryPoint,

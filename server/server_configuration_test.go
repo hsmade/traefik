@@ -148,6 +148,22 @@ func TestServerLoadConfigHealthCheckOptions(t *testing.T) {
 	}
 }
 
+func TestServerLoadConfigExplodeFrontendRoutes(t *testing.T) {
+	routes := map[string]types.Route{
+		"one": {Rule: "Host:A||Host:B"},
+		"two": {Rule: "Host:foobar"},
+	}
+	result := *expandRoutes(&routes)
+
+	expected := map[string]types.Route{
+		"one-0": {Rule: "Host:A"},
+		"one-1": {Rule: "Host:B"},
+		"two":   {Rule: "Host:foobar"},
+	}
+
+	assert.EqualValues(t, expected, result, "Route expand failed")
+}
+
 func TestServerLoadConfigEmptyBasicAuth(t *testing.T) {
 	globalConfig := configuration.GlobalConfiguration{
 		EntryPoints: configuration.EntryPoints{
